@@ -1,0 +1,28 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet r1Firewall {
+
+        chain input {
+                type filter hook input priority 0; policy accept;
+        }
+
+        chain forward {
+                type filter hook forward priority 0; policy drop;
+                ct state established,related accept
+
+                # Only workstations can initiate new connection and ping.
+                iifname r1-eth0 ct state new,established,related accept
+                iifname r1-eth0 oifname r1-eth12 icmp type echo-request accept
+
+                # Allow only echo reply from outside workstations.
+                iifname r1-eth12 oifname r1-eth0 icmp type echo-reply accept
+        }
+
+        chain output  {
+                type filter hook output priority 0; policy accept;
+        }
+
+}
+
